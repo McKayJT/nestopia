@@ -27,7 +27,8 @@ typedef struct {
 	SDL_Scancode insertcoin1;
 	SDL_Scancode insertcoin2;
 	
-	SDL_Scancode reset;
+	SDL_Event reset;
+	SDL_Event hardreset;
 	
 	SDL_Scancode ffspeed;
 	SDL_Scancode rwstart;
@@ -80,6 +81,7 @@ typedef struct {
 	char *insertcoin2;
 	
 	char *reset;
+	char *hardreset;
 	
 	char *ffspeed;
 	char *rwstart;

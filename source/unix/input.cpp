@@ -387,6 +387,11 @@ void input_match_joystick(Input::Controllers *controllers, SDL_Event event) {
 			// Rewind
 			if (event.jbutton.button == rw[0].jbutton.button && event.jbutton.which == rw[0].jbutton.which) { nst_set_rewind(0); }
 			if (event.jbutton.button == rw[1].jbutton.button && event.jbutton.which == rw[1].jbutton.which) { nst_set_rewind(1); }
+
+			// Reset
+			if (event.jbutton.button == ui.reset.jbutton.button && event.jbutton.which == ui.reset.jbutton.which) { nst_reset(0); }
+			if (event.jbutton.button == ui.hardreset.jbutton.button && event.jbutton.which == ui.reset.jbutton.which) { nst_reset(1); }
+
 			break;
 		
 		// Handling hat input can be a lot of fun if you like pain
@@ -573,9 +578,6 @@ void input_match_keyboard(Input::Controllers *controllers, SDL_Event event) {
 	// Screenshot
 	if (keys[ui.screenshot]) { video_screenshot(NULL); }
 	
-	// Reset
-	if (keys[ui.reset]) { nst_reset(0); }
-	
 	// Rewinder
 	if (keys[ui.rwstart]) { nst_set_rewind(0); }
 	if (keys[ui.rwstop]) { nst_set_rewind(1); }
@@ -722,6 +724,7 @@ static int input_config_match(void* user, const char* section, const char* name,
 	else if (MATCH("ui", "insertcoin2")) { pconfig->insertcoin2 = strdup(value); }
 	
 	else if (MATCH("ui", "reset")) { pconfig->reset = strdup(value); }
+	else if (MATCH("ui", "hardreset")) { pconfig->hardreset = strdup(value); }
 	
 	else if (MATCH("ui", "ffspeed")) { pconfig->ffspeed = strdup(value); }
 	else if (MATCH("ui", "rwstart")) { pconfig->rwstart = strdup(value); }
@@ -808,7 +811,8 @@ void input_config_read() {
 		ui.insertcoin1 = SDL_GetScancodeFromName(inputconf.insertcoin1);
 		ui.insertcoin2 = SDL_GetScancodeFromName(inputconf.insertcoin2);
 		
-		ui.reset = SDL_GetScancodeFromName(inputconf.reset);
+		ui.reset = input_translate_string(inputconf.reset);
+		ui.hardreset = input_translate_string(inputconf.hardreset);
 		
 		ui.ffspeed = SDL_GetScancodeFromName(inputconf.ffspeed);
 		ui.rwstart = SDL_GetScancodeFromName(inputconf.rwstart);
@@ -893,7 +897,8 @@ void input_config_write() {
 		fprintf(fp, "insertcoin1=%s\n", SDL_GetScancodeName(ui.insertcoin1));
 		fprintf(fp, "insertcoin2=%s\n", SDL_GetScancodeName(ui.insertcoin2));
 		
-		fprintf(fp, "reset=%s\n", SDL_GetScancodeName(ui.reset));
+		fprintf(fp, "reset=%s\n", input_translate_event(ui.reset));
+		fprintf(fp, "hardreset=%s\n", input_translate_event(ui.hardreset));
 		
 		fprintf(fp, "ffspeed=%s\n", SDL_GetScancodeName(ui.ffspeed));
 		fprintf(fp, "rwstart=%s\n", SDL_GetScancodeName(ui.rwstart));
@@ -975,7 +980,8 @@ void input_set_default() {
 	ui.insertcoin1 = SDL_GetScancodeFromName("F1");
 	ui.insertcoin2 = SDL_GetScancodeFromName("F2");
 	
-	ui.reset = SDL_GetScancodeFromName("F12");
+	ui.reset = input_translate_string("j0b4");
+	ui.hardreset = input_translate_string("j0b5");
 	
 	ui.ffspeed = SDL_GetScancodeFromName("`");
 	ui.rwstart = SDL_GetScancodeFromName("Backspace");
@@ -1007,8 +1013,8 @@ void input_set_default() {
 	player[0].jta = input_translate_string("j0b2");
 	player[0].jtb = input_translate_string("j0b3");
 	
-	player[0].rwstart = input_translate_string("j0b4");
-	player[0].rwstop = input_translate_string("j0b5");
+	//player[0].rwstart = input_translate_string("j0b4");
+	//player[0].rwstop = input_translate_string("j0b5");
 	
 	player[1].u = SDL_GetScancodeFromName("I");
 	player[1].d = SDL_GetScancodeFromName("K");
