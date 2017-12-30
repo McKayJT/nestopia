@@ -58,6 +58,7 @@ static SDL_AudioDeviceID dev;
 static int16_t audiobuf[6400];
 
 static int framerate, channels, bufsize;
+static uint *req_samples;
 
 static bool paused = false;
 
@@ -151,20 +152,32 @@ void audio_init_ao() {
 int audio_cb_jack(jack_nframes_t nframes, void *arg) {
 	jack_default_audio_sample_t *out1, *out2;
 	int i;
+	size_t framesavail;
 
 	if(!jack_ready)
 		return 0;
 
 	out1 = (jack_default_audio_sample_t*) jack_port_get_buffer(jack_output_port1, nframes);
 	out2 = (jack_default_audio_sample_t*) jack_port_get_buffer(jack_output_port2, nframes);
-	// it is safe to not check if we have enough data
-	// because jack_ringbuffer_read does a noop if you ask for too much
-	for(i=0; i<nframes; i++) {
+	/* check to see how much data we are short. for some reason we always seem to
+	 * be short on audio data.
+	 */
+	framesavail = jack_ringbuffer_read_space(jack_rb)/jack_sample_size;
+	if(framesavail > nframes) {
+		framesavail = nframes;
+	}
+	for(i=0; i<framesavail; i++) {
 		jack_ringbuffer_read(jack_rb,(char *) (out1+i),jack_sample_size);
 		if(channels == 1)
 			out2[i] = out1[i];
 		else if(channels == 2)
 			jack_ringbuffer_read(jack_rb,(char *) (out2+i),jack_sample_size);
+	}
+	//write 0s for the missing audio data...
+	for(i=framesavail; i < nframes; i++)
+	{
+		out1[i] = 0.0;
+		out2[i] = 0.0;
 	}
 	return 0;
 }
@@ -224,18 +237,21 @@ void audio_init_jack() {
 }
 
 void audio_output_jack() {
-	size_t i;
+	size_t i, remain;
 	jack_default_audio_sample_t sample;
 
 	if(!jack_ready)
 		return;
-
-	if(bufsize > (jack_ringbuffer_write_space(jack_rb) / jack_sample_size)) {
-		fprintf(stderr, "Audio: jack - ringbuffer full!\n");
-		bufsize = jack_ringbuffer_write_space(jack_rb) / jack_sample_size;
+	//modify how much audio data we are requesting based on buffer capacity
+	bufsize = *req_samples;
+	remain = jack_ringbuffer_read_space(jack_rb) / jack_sample_size;
+	if( remain < 800 ) {
+		*req_samples = 20 + (conf.audio_sample_rate / framerate);
 	}
-
-	for(i = 0; i < (bufsize/2); i++) {
+	else if ( remain > 1600 ) {
+		*req_samples = conf.audio_sample_rate / framerate;
+	}
+	for(i = 0; i < bufsize; i++) {
 		// convert the audio to 32 bit float to make JACK happy
 		sample = (float) audiobuf[i];
 		sample /= (float) 0x8000;
@@ -314,6 +330,7 @@ void audio_set_params(Sound::Output *soundoutput) {
 	
 	soundoutput->samples[0] = audiobuf;
 	soundoutput->length[0] = conf.audio_sample_rate / framerate;
+	req_samples = soundoutput->length;
 	soundoutput->samples[1] = NULL;
 	soundoutput->length[1] = 0;
 }
