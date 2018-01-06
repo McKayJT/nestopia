@@ -301,7 +301,8 @@ int gtkui_input_process_key(GtkWidget *widget, GdkEventKey *event, gpointer user
 		default: break;
 	}
 	
-	input_inject(cNstPads, input);
+	if(playing)
+		input_inject(cNstPads, input);
 	
 	return TRUE;	
 }
