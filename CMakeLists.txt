@@ -328,6 +328,7 @@ add_executable( nestopia
 	source/unix/cursor.cpp
 	source/unix/ini.cpp
 	source/unix/png.cpp
+	source/unix/watches.cpp
 )
 
 # check whether compiler accepts -Wno-narrowing

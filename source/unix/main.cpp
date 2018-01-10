@@ -58,6 +58,7 @@
 #include "input.h"
 #include "config.h"
 #include "cheats.h"
+#include "watches.h"
 
 #ifdef _GTK
 #include "gtkui/gtkui.h"
@@ -429,6 +430,7 @@ void nst_play() {
 	audio_init();
 	input_init();
 	cheats_init();
+	watches_init();
 	
 	#ifdef _GTK
 	if (!conf.misc_disable_gui) { gtkui_signals_init(); }

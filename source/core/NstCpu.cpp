@@ -35,7 +35,7 @@ namespace Nes
 	namespace Core
 	{
 		dword Cpu::logged = 0;
-		unsigned char Cpu::watches[0x8000/CHAR_BIT];
+		unsigned char Cpu::watches[0x8000];
 		void (*Cpu::callback)(uint, uint) = nullptr;
 
 		void (Cpu::*const Cpu::opcodes[0x100])() =
