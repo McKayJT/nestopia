@@ -28,12 +28,15 @@
 #include "NstHook.hpp"
 #include "NstState.hpp"
 #include "api/NstApiUser.hpp"
+#include "xtrapbits.h"
 
 namespace Nes
 {
 	namespace Core
 	{
 		dword Cpu::logged = 0;
+		unsigned char Cpu::watches[0x8000/CHAR_BIT];
+		void (*Cpu::callback)(uint, uint) = nullptr;
 
 		void (Cpu::*const Cpu::opcodes[0x100])() =
 		{
@@ -155,6 +158,8 @@ namespace Nes
 		map   ( this, &Cpu::Peek_Overflow, &Cpu::Poke_Overflow )
 		{
 			cycles.UpdateTable( GetModel() );
+			memset(watches, 0, sizeof watches);
+			callback = nullptr;
 			Reset( false, false );
 		}
 
@@ -552,6 +557,16 @@ namespace Nes
 			}
 		}
 
+		void Cpu::AddWatch(uint address)
+		{
+			BitTrue(watches, address);
+		}
+
+		void Cpu::AddWatchCallback(void (*fp)(uint, uint))
+		{
+			callback = fp;
+		}
+
 		#ifdef NST_MSVC_OPTIMIZE
 		#pragma optimize("", on)
 		#endif
@@ -766,6 +781,8 @@ namespace Nes
 		inline void Cpu::IoMap::Poke8(const uint address,const uint data) const
 		{
 			NST_ASSERT( address < FULL_SIZE );
+			if(Cpu::callback != nullptr && BitValue(Cpu::watches, address))
+				(*Cpu::callback)(address, data);
 			ports[address].Poke( address, data );
 		}
 

@@ -93,6 +93,12 @@ namespace Nes
 			void SaveState(State::Saver&,dword,dword) const;
 			void LoadState(State::Loader&,dword,dword,dword);
 
+			void AddWatchCallback(void (*fp)(uint,uint));
+			void AddWatch(uint);
+
+			static unsigned char watches[];
+			static void (*callback)(uint,uint);
+
 		private:
 
 			static void NotifyOp(const char (&)[4],dword);
